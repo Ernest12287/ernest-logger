@@ -1,0 +1,36 @@
+{
+  "name": "ernest-logger",
+  "version": "1.0.0",
+  "description": "the very simple and most useful logger ever made by human simple to use and simple to understand",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Ernest12287/ernest-logger.git"
+  },
+"keywords": [
+  "ernest",
+  "logger",
+  "logging",
+  "cli",
+  "terminal",
+  "color",
+  "ansi",
+  "node",
+  "easy",
+  "simple",
+  "debug",
+  "info",
+  "error",
+  "success",
+  "output"
+],
+  "author": "Pease ernest",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Ernest12287/ernest-logger/issues"
+  },
+  "homepage": "https://github.com/Ernest12287/ernest-logger#readme"
+}
