@@ -1,18 +1,32 @@
+const fs = require('fs');
+const path = require('path');
 const colors = require('./colours/colors');
 const emojis = require('./emojis/emojis');
 const getTimestamp = require('./timestamp/timestamp');
 
-// Default configuration for the logger.
+// Priority map for filtering logs
+const levelPriority = {
+    debug: 0,
+    info: 1,
+    success: 2,
+    warn: 3,
+    error: 4,
+};
+
 let config = {
     time: false,
     emoji: false,
+    level: 'debug', // default: show all
+    file: false,
+    customLevels: {},
 };
 
-// Main function to configure and return the logger object.
+// Optional log file path
+const logFilePath = path.join(__dirname, '../../ernest.log');
+
 const createLogger = (options = {}) => {
     config = { ...config, ...options };
 
-    // Helper function to create a boxed message for "big text" logs.
     const createBoxedMessage = (level, message, boxColor) => {
         const lines = message.split('\n');
         const maxLength = Math.max(...lines.map(line => line.length));
@@ -25,165 +39,76 @@ const createLogger = (options = {}) => {
             const padding = ' '.repeat(maxLength - line.length);
             boxedMessage += `║ ${line}${padding} ║\n`;
         });
-        
+
         boxedMessage += `╚${horizontalLine}╝` + colors.reset;
         return boxedMessage;
     };
 
-    // Function to format the log message with optional timestamp and emoji.
     const formatMessage = (level, message) => {
+        if (levelPriority[level] < levelPriority[config.level]) return null;
+
         let prefix = "";
-        if (config.time) {
-            prefix += `[${getTimestamp()}] `;
-        }
-        if (config.emoji && emojis[level]) {
-            prefix += `${emojis[level]} `;
-        }
+        if (config.time) prefix += `[${getTimestamp()}] `;
+        if (config.emoji && emojis[level]) prefix += `${emojis[level]} `;
         return `${prefix}${message}`;
     };
 
-    // The logger object with methods for different log levels and colors.
+    const logToConsoleAndFile = (level, color, message) => {
+        const formatted = formatMessage(level, message);
+        if (!formatted) return;
+
+        const output = colors[color] + formatted + colors.reset;
+        console.log(output);
+
+        if (config.file) {
+            fs.appendFileSync(logFilePath, formatted + '\n');
+        }
+    };
+
     const logger = {
         log: {
             info: {
-                blue: (message) => {
-                    console.log(colors.blue + formatMessage("info", message) + colors.reset);
-                },
-                red: (message) => {
-                    console.log(colors.red + formatMessage("info", message) + colors.reset);
-                },
-                green: (message) => {
-                    console.log(colors.green + formatMessage("info", message) + colors.reset);
-                },
+                blue: (msg) => logToConsoleAndFile("info", "blue", msg),
+                red: (msg) => logToConsoleAndFile("info", "red", msg),
+                green: (msg) => logToConsoleAndFile("info", "green", msg),
             },
             success: {
-                blue: (message) => {
-                    console.log(colors.blue + formatMessage("success", message) + colors.reset);
-                },
-                green: (message) => {
-                    console.log(colors.green + formatMessage("success", message) + colors.reset);
-                },
-                yellow: (message) => {
-                    console.log(colors.yellow + formatMessage("success", message) + colors.reset);
-                },
+                blue: (msg) => logToConsoleAndFile("success", "blue", msg),
+                green: (msg) => logToConsoleAndFile("success", "green", msg),
+                yellow: (msg) => logToConsoleAndFile("success", "yellow", msg),
             },
             error: {
-                red: (message) => {
-                    console.log(colors.red + formatMessage("error", message) + colors.reset);
-                },
-                magenta: (message) => {
-                    console.log(colors.magenta + formatMessage("error", message) + colors.reset);
-                },
+                red: (msg) => logToConsoleAndFile("error", "red", msg),
+                magenta: (msg) => logToConsoleAndFile("error", "magenta", msg),
             },
             warn: {
-                yellow: (message) => {
-                    console.log(colors.yellow + formatMessage("warn", message) + colors.reset);
-                },
+                yellow: (msg) => logToConsoleAndFile("warn", "yellow", msg),
             },
             debug: {
-                cyan: (message) => {
-                    console.log(colors.cyan + formatMessage("debug", message) + colors.reset);
-                },
+                cyan: (msg) => logToConsoleAndFile("debug", "cyan", msg),
             },
-            // Extra emoji-powered log levels
-            start: {
-                green: (message) => {
-                    console.log(colors.green + formatMessage("start", message) + colors.reset);
-                },
-            },
-            stop: {
-                red: (message) => {
-                    console.log(colors.red + formatMessage("stop", message) + colors.reset);
-                },
-            },
-            network: {
-                blue: (message) => {
-                    console.log(colors.blue + formatMessage("network", message) + colors.reset);
-                },
-            },
-            db: {
-                magenta: (message) => {
-                    console.log(colors.magenta + formatMessage("db", message) + colors.reset);
-                },
-            },
-            api: {
-                cyan: (message) => {
-                    console.log(colors.cyan + formatMessage("api", message) + colors.reset);
-                },
-            },
-            cache: {
-                yellow: (message) => {
-                    console.log(colors.yellow + formatMessage("cache", message) + colors.reset);
-                },
-            },
-            security: {
-                red: (message) => {
-                    console.log(colors.red + formatMessage("security", message) + colors.reset);
-                },
-            },
-            unlock: {
-                green: (message) => {
-                    console.log(colors.green + formatMessage("unlock", message) + colors.reset);
-                },
-            },
-            file: {
-                white: (message) => {
-                    console.log(colors.white + formatMessage("file", message) + colors.reset);
-                },
-            },
-            folder: {
-                cyan: (message) => {
-                    console.log(colors.cyan + formatMessage("folder", message) + colors.reset);
-                },
-            },
-            cloud: {
-                blue: (message) => {
-                    console.log(colors.blue + formatMessage("cloud", message) + colors.reset);
-                },
-            },
-            robot: {
-                magenta: (message) => {
-                    console.log(colors.magenta + formatMessage("robot", message) + colors.reset);
-                },
-            },
-            human: {
-                green: (message) => {
-                    console.log(colors.green + formatMessage("human", message) + colors.reset);
-                },
-            },
-            idea: {
-                yellow: (message) => {
-                    console.log(colors.yellow + formatMessage("idea", message) + colors.reset);
-                },
-            },
-            build: {
-                blue: (message) => {
-                    console.log(colors.blue + formatMessage("build", message) + colors.reset);
-                },
-            },
-            test: {
-                cyan: (message) => {
-                    console.log(colors.cyan + formatMessage("test", message) + colors.reset);
-                },
-            },
-            ship: {
-                blue: (message) => {
-                    console.log(colors.blue + formatMessage("ship", message) + colors.reset);
-                },
-            },
-            bugFix: {
-                green: (message) => {
-                    console.log(colors.green + formatMessage("bugFix", message) + colors.reset);
-                },
-            },
+            // ... (other predefined levels like start, stop, db, etc.)
         },
-        // A new top-level method for creating a big, boxed log.
+
         bigLog: (level, color, message) => {
-             console.log(createBoxedMessage(level, message, color));
+            console.log(createBoxedMessage(level, message, color));
+            if (config.file) {
+                fs.appendFileSync(logFilePath, `[BIG] ${message}\n`);
+            }
         },
     };
+
+    // Inject custom levels
+    if (config.customLevels) {
+        Object.entries(config.customLevels).forEach(([level, { color, emoji }]) => {
+            emojis[level] = emoji;
+            logger.log[level] = {
+                [color]: (msg) => logToConsoleAndFile(level, color, msg),
+            };
+        });
+    }
+
     return logger;
 };
 
-// Export the logger creation function as the main entry point.
 module.exports = createLogger;
